@@ -52,8 +52,9 @@ export default class MjColumn extends BodyComponent {
     })
 
     if (unit === '%') {
-      containerWidth = `${(parseFloat(parentWidth) * parsedWidth) / 100 -
-        allPaddings}px`
+      containerWidth = `${
+        (parseFloat(parentWidth) * parsedWidth) / 100 - allPaddings
+      }px`
     } else {
       containerWidth = `${parsedWidth - allPaddings}px`
     }
@@ -121,7 +122,8 @@ export default class MjColumn extends BodyComponent {
 
     if (mobileWidth !== 'mobileWidth') {
       return '100%'
-    } else if (width === undefined) {
+    }
+    if (width === undefined) {
       return `${parseInt(100 / nonRawSiblings, 10)}%`
     }
 
@@ -205,7 +207,7 @@ export default class MjColumn extends BodyComponent {
       'padding-left',
       'padding-right',
       'padding-top',
-    ].some(attr => this.getAttribute(attr) != null)
+    ].some((attr) => this.getAttribute(attr) != null)
   }
 
   renderGutter() {
@@ -244,38 +246,38 @@ export default class MjColumn extends BodyComponent {
           width: '100%',
         })}
       >
-        ${this.renderChildren(children, {
-          renderer: (
-            component, // eslint-disable-line no-confusing-arrow
-          ) =>
-            component.constructor.isRawElement()
-              ? component.render()
-              : `
-            <tr>
-              <td
-                ${component.htmlAttributes({
-                  align: component.getAttribute('align'),
-                  'vertical-align': component.getAttribute('vertical-align'),
-                  class: component.getAttribute('css-class'),
-                  style: {
-                    background: component.getAttribute(
-                      'container-background-color',
-                    ),
-                    'font-size': '0px',
-                    padding: component.getAttribute('padding'),
-                    'padding-top': component.getAttribute('padding-top'),
-                    'padding-right': component.getAttribute('padding-right'),
-                    'padding-bottom': component.getAttribute('padding-bottom'),
-                    'padding-left': component.getAttribute('padding-left'),
-                    'word-break': 'break-word',
-                  },
-                })}
-              >
-                ${component.render()}
-              </td>
-            </tr>
-          `,
-        })}
+        <tbody>
+          ${this.renderChildren(children, {
+            renderer: (component) =>
+              component.constructor.isRawElement()
+                ? component.render()
+                : `
+              <tr>
+                <td
+                  ${component.htmlAttributes({
+                    align: component.getAttribute('align'),
+                    'vertical-align': component.getAttribute('vertical-align'),
+                    class: component.getAttribute('css-class'),
+                    style: {
+                      background: component.getAttribute(
+                        'container-background-color',
+                      ),
+                      'font-size': '0px',
+                      padding: component.getAttribute('padding'),
+                      'padding-top': component.getAttribute('padding-top'),
+                      'padding-right': component.getAttribute('padding-right'),
+                      'padding-bottom': component.getAttribute('padding-bottom'),
+                      'padding-left': component.getAttribute('padding-left'),
+                      'word-break': 'break-word',
+                    },
+                  })}
+                >
+                  ${component.render()}
+                </td>
+              </tr>
+            `,
+          })}
+        </tbody>
       </table>
     `
   }

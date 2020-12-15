@@ -16,7 +16,7 @@ import { minify as htmlMinify } from 'html-minifier'
 import cheerio from 'cheerio'
 
 import MJMLParser from 'mjml-parser-xml'
-import MJMLValidator from 'mjml-validator'
+import MJMLValidator, { dependencies } from 'mjml-validator'
 import { handleMjml3 } from 'mjml-migrate'
 
 import components, { initComponent, registerComponent } from './components'
@@ -142,6 +142,7 @@ export default function mjml2html(mjml, options = {}) {
 
   const validatorOptions = {
     components,
+    dependencies,
     initializeType,
   }
 
@@ -155,7 +156,7 @@ export default function mjml2html(mjml, options = {}) {
       if (errors.length > 0) {
         throw new ValidationError(
           `ValidationError: \n ${errors
-            .map(e => e.formattedMessage)
+            .map((e) => e.formattedMessage)
             .join('\n')}`,
           errors,
         )
@@ -195,7 +196,7 @@ export default function mjml2html(mjml, options = {}) {
     }
   }
 
-  const applyAttributes = mjml => {
+  const applyAttributes = (mjml) => {
     const parse = (mjml, parentMjClass = '') => {
       const { attributes, tagName, children } = mjml
       const classes = get(mjml.attributes, 'mj-class', '').split(' ')
@@ -240,7 +241,7 @@ export default function mjml2html(mjml, options = {}) {
         globalAttributes: {
           ...globalDatas.defaultAttributes['mj-all'],
         },
-        children: map(children, mjml => parse(mjml, nextParentMjClass)),
+        children: map(children, (mjml) => parse(mjml, nextParentMjClass)),
       }
     }
 
@@ -259,7 +260,7 @@ export default function mjml2html(mjml, options = {}) {
     addComponentHeadSyle(headStyle) {
       globalDatas.componentsHeadStyle.push(headStyle)
     },
-    setBackgroundColor: color => {
+    setBackgroundColor: (color) => {
       globalDatas.backgroundColor = color
     },
     processing: (node, context) => processing(node, context, applyAttributes),
@@ -277,9 +278,11 @@ export default function mjml2html(mjml, options = {}) {
               ...params[1],
             }
           } else {
+            // eslint-disable-next-line prefer-destructuring
             globalDatas[attr][params[0]] = params[1]
           }
         } else {
+          // eslint-disable-next-line prefer-destructuring
           globalDatas[attr] = params[0]
         }
       } else {
@@ -296,8 +299,23 @@ export default function mjml2html(mjml, options = {}) {
 
   content = processing(mjBody, bodyHelpers, applyAttributes)
 
-  if (minify && minify !== 'false') {
-    content = minifyOutlookConditionnals(content)
+  content = minifyOutlookConditionnals(content)
+
+  if (!isEmpty(globalDatas.htmlAttributes)) {
+    const $ = cheerio.load(content, {
+      xmlMode: true, // otherwise it may move contents that aren't in any tag
+      decodeEntities: false, // won't escape special characters
+    })
+
+    each(globalDatas.htmlAttributes, (data, selector) => {
+      each(data, (value, attrName) => {
+        $(selector).each(function getAttr() {
+          $(this).attr(attrName, value || '')
+        })
+      })
+    })
+
+    content = $.root().html()
   }
 
   content = skeleton({
@@ -321,17 +339,26 @@ export default function mjml2html(mjml, options = {}) {
     })
   }
 
-  content =
-    beautify && beautify !== 'false'
-      ? htmlBeautify(content, {
-          indent_size: 2,
-          wrap_attributes_indent_size: 2,
-          max_preserve_newline: 0,
-          preserve_newlines: false,
-        })
-      : content
+  content = mergeOutlookConditionnals(content)
 
-  if (minify && minify !== 'false') {
+  if (beautify) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      '"beautify" option is deprecated in mjml-core and only available in mjml cli.',
+    )
+    content = htmlBeautify(content, {
+      indent_size: 2,
+      wrap_attributes_indent_size: 2,
+      max_preserve_newline: 0,
+      preserve_newlines: false,
+    })
+  }
+
+  if (minify) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      '"minify" option is deprecated in mjml-core and only available in mjml cli.',
+    )
     content = htmlMinify(content, {
       collapseWhitespace: true,
       minifyCSS: false,
@@ -341,27 +368,9 @@ export default function mjml2html(mjml, options = {}) {
     })
   }
 
-  if (!isEmpty(globalDatas.htmlAttributes)) {
-    const $ = cheerio.load(content, {
-      xmlMode: true, // otherwise it may move contents that aren't in any tag
-      decodeEntities: false, // won't escape special characters
-    })
-
-    each(globalDatas.htmlAttributes, (data, selector) => {
-      each(data, (value, attrName) => {
-        $(selector).each(function getAttr() {
-          $(this).attr(attrName, value)
-        })
-      })
-    })
-
-    content = $.root().html()
-  }
-
-  content = mergeOutlookConditionnals(content)
-
   return {
     html: content,
+    json: mjml,
     errors,
   }
 }

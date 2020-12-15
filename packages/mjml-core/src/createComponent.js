@@ -1,3 +1,4 @@
+// eslint-disable-next-line max-classes-per-file
 import {
   get,
   forEach,
@@ -21,6 +22,7 @@ class Component {
   static getTagName() {
     return kebabCase(this.name)
   }
+
   static isRawElement() {
     return !!this.rawElement
   }
@@ -70,11 +72,15 @@ class Component {
 
   renderMJML(mjml, options = {}) {
     if (typeof mjml === 'string') {
-      mjml = MJMLParser(mjml, {
+      // supports returning siblings elements from a custom component
+      const partialMjml = MJMLParser(`<fragment>${mjml}</fragment>`, {
         ...options,
         components,
         ignoreIncludes: true,
       })
+      return partialMjml.children
+        .map(child => this.context.processing(child, this.context))
+        .join('')
     }
 
     return this.context.processing(mjml, this.context)
@@ -107,7 +113,7 @@ export class BodyComponent extends Component {
       direction && this.getAttribute(`border-${direction}`)
     const border = this.getAttribute('border')
 
-    return borderParser(borderDirection || border || '0', 10)
+    return borderParser(borderDirection || border || '0')
   }
 
   getBoxWidths() {
@@ -132,7 +138,7 @@ export class BodyComponent extends Component {
 
   htmlAttributes(attributes) {
     const specialAttributes = {
-      style: v => this.styles(v),
+      style: (v) => this.styles(v),
       default: identity,
     }
 
@@ -177,7 +183,7 @@ export class BodyComponent extends Component {
   renderChildren(childrens, options = {}) {
     const {
       props = {},
-      renderer = component => component.render(),
+      renderer = (component) => component.render(),
       attributes = {},
       rawXML = false,
     } = options
@@ -185,20 +191,20 @@ export class BodyComponent extends Component {
     childrens = childrens || this.props.children
 
     if (rawXML) {
-      return childrens.map(child => jsonToXML(child)).join('\n')
+      return childrens.map((child) => jsonToXML(child)).join('\n')
     }
 
     const sibling = childrens.length
 
-    const rawComponents = filter(components, c => c.isRawElement())
+    const rawComponents = filter(components, (c) => c.isRawElement())
     const nonRawSiblings = childrens.filter(
-      child => !find(rawComponents, c => c.getTagName() === child.tagName),
+      (child) => !find(rawComponents, (c) => c.getTagName() === child.tagName),
     ).length
 
     let output = ''
     let index = 0
 
-    forEach(childrens, children => {
+    forEach(childrens, (children) => {
       const component = initComponent({
         name: children.tagName,
         initialDatas: {
@@ -238,7 +244,7 @@ export class HeadComponent extends Component {
   handlerChildren() {
     const childrens = this.props.children
 
-    return childrens.map(children => {
+    return childrens.map((children) => {
       const component = initComponent({
         name: children.tagName,
         initialDatas: {

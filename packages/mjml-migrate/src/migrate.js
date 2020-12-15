@@ -22,9 +22,10 @@ function removeContainerTag(bodyTag) {
   return bodyTag
 }
 
-const listAttributes = tag => tag.attributes
+const listAttributes = (tag) => tag.attributes
 
 function addPx(value) {
+  // eslint-disable-next-line no-restricted-globals
   if (!isNaN(value) && !isNil(value)) {
     return `${value}px`
   }
@@ -32,7 +33,7 @@ function addPx(value) {
 }
 
 function fixUnits(attribute, value) {
-  const length = attributesWithUnit.length
+  const { length } = attributesWithUnit
   for (let i = 0; i < length; i += 1) {
     if (attributesWithUnit[i] === attribute) {
       return addPx(value)
@@ -42,7 +43,7 @@ function fixUnits(attribute, value) {
 }
 
 function cleanAttributes(attributes) {
-  keys(attributes).forEach(key => {
+  keys(attributes).forEach((key) => {
     attributes[key] = fixUnits(key, attributes[key])
   })
   return attributes
@@ -51,7 +52,7 @@ function cleanAttributes(attributes) {
 const DEFAULT_SOCIAL_DISPLAY = 'facebook twitter google'
 
 function migrateSocialSyntax(socialTag) {
-  const listAllNetworks = tag => {
+  const listAllNetworks = (tag) => {
     const attributes = (tag.attributes.display || DEFAULT_SOCIAL_DISPLAY).split(
       ' ',
     )
@@ -65,7 +66,7 @@ function migrateSocialSyntax(socialTag) {
   socialTag.children = []
 
   // migrate all attributes to their child attributes
-  keys(networks).forEach(network => {
+  keys(networks).forEach((network) => {
     const nameMigrated = networks[network]
       .replace(':url', '-noshare')
       .replace(':share', '')
@@ -77,7 +78,7 @@ function migrateSocialSyntax(socialTag) {
       content: attributes[`${nameWithoutOpts}-content`] || '',
     })
 
-    keys(attributes).forEach(attribute => {
+    keys(attributes).forEach((attribute) => {
       if (attribute.match(nameWithoutOpts) && !attribute.match('content')) {
         socialTag.children[network].attributes[
           attribute.replace(`${nameWithoutOpts}-`, '')
@@ -88,7 +89,7 @@ function migrateSocialSyntax(socialTag) {
   })
 
   // delete all content attributes from the root tag after they've been migrated
-  keys(attributes).forEach(attribute => {
+  keys(attributes).forEach((attribute) => {
     if (attribute.match('content')) {
       delete attributes[attribute]
     }
@@ -121,7 +122,7 @@ function isSupportedTag(tag) {
 }
 
 function loopThrough(tree) {
-  keys(tree).forEach(key => {
+  keys(tree).forEach((key) => {
     if (key === 'children') {
       for (let i = 0; i < tree.children.length; i += 1) {
         if (isSupportedTag(tree.children[i].tagName)) {
@@ -177,7 +178,7 @@ const jsonToXML = ({ tagName, attributes, children, content }) => {
       : content || ''
 
   const stringAttrs = Object.keys(attributes)
-    .map(attr => `${attr}="${attributes[attr]}"`)
+    .map((attr) => `${attr}="${attributes[attr]}"`)
     .join(' ')
 
   return `<${tagName}${
@@ -186,6 +187,7 @@ const jsonToXML = ({ tagName, attributes, children, content }) => {
 }
 
 export default function migrate(input, options = {}) {
+  console.warn('mjml-migrate is deprecated and will be removed in mjml 5')
   const { beautify } = options
   if (typeof input === 'object') return loopThrough(input)
 
